@@ -182,7 +182,36 @@ public class Driver implements java.sql.Driver {
 
         Properties props = setupConnectProperties(url, info);
 
-        return new JtdsConnection(url, props);
+        
+        //Enhanced to support AD domain - Start
+        //return new JtdsConnection(url, props);
+        JtdsConnection conn = null;
+        try {
+        	conn = new JtdsConnection(url, props);
+        } catch (Exception e) {
+        	String userId = props.getProperty(Messages.get(Driver.USER));
+        	if (userId.indexOf("\\") != -1) {
+        		String[] userStr = userId.split("\\\\");
+            	String domain = userStr[0];
+            	userId = userStr[1];
+            	
+            	String useNTLMv2 = "true";
+            	
+                if (System.getProperty("DOMAIN") != null) {
+                	domain = System.getProperty("DOMAIN");
+                }
+                if (System.getProperty("USENTLMV2") != null) {
+                	useNTLMv2 = System.getProperty("USENTLMV2");
+                }
+                
+            	props.setProperty(Messages.get(Driver.DOMAIN), domain);
+            	props.setProperty(Messages.get(Driver.USER), userId);
+            	props.setProperty(Messages.get(Driver.USENTLMV2), useNTLMv2);
+            	conn = new JtdsConnection(url, props);        		
+        	}
+        }
+        return conn;
+        //Enhanced to support AD domain - END
     }
 
     public DriverPropertyInfo[] getPropertyInfo(final String url, final Properties props)
